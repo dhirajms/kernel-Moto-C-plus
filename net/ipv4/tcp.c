@@ -796,7 +796,7 @@ ssize_t tcp_splice_read(struct socket *sock, loff_t *ppos,
 				ret = -EAGAIN;
 				break;
 			}
-			 /* if __tcp_splice_read() got nothing while we have
+			/* if __tcp_splice_read() got nothing while we have
 			 * an skb in receive queue, we do not want to loop.
 			 * This might happen with URG data.
 			 */
@@ -966,7 +966,7 @@ new_segment:
 
 		i = skb_shinfo(skb)->nr_frags;
 		can_coalesce = skb_can_coalesce(skb, i, page, offset);
-		if (!can_coalesce && i >= MAX_SKB_FRAGS) {
+		if (!can_coalesce && i >= sysctl_max_skb_frags) {
 			tcp_mark_push(tp, skb);
 			goto new_segment;
 		}
@@ -1087,9 +1087,12 @@ static int tcp_sendmsg_fastopen(struct sock *sk, struct msghdr *msg,
 				int *copied, size_t size)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
+	struct sockaddr *uaddr = msg->msg_name;
 	int err, flags;
 
-	if (!(sysctl_tcp_fastopen & TFO_CLIENT_ENABLE))
+	if (!(sysctl_tcp_fastopen & TFO_CLIENT_ENABLE) ||
+	    (uaddr && msg->msg_namelen >= sizeof(uaddr->sa_family) &&
+	     uaddr->sa_family == AF_UNSPEC))
 		return -EOPNOTSUPP;
 	if (tp->fastopen_req != NULL)
 		return -EALREADY; /* Another Fast Open is in progress */
@@ -1102,7 +1105,7 @@ static int tcp_sendmsg_fastopen(struct sock *sk, struct msghdr *msg,
 	tp->fastopen_req->size = size;
 
 	flags = (msg->msg_flags & MSG_DONTWAIT) ? O_NONBLOCK : 0;
-	err = __inet_stream_connect(sk->sk_socket, msg->msg_name,
+	err = __inet_stream_connect(sk->sk_socket, uaddr,
 				    msg->msg_namelen, flags);
 	*copied = tp->fastopen_req->copied;
 	tcp_free_fastopen_req(tp);
@@ -1252,7 +1255,7 @@ new_segment:
 
 				if (!skb_can_coalesce(skb, i, pfrag->page,
 						      pfrag->offset)) {
-					if (i == MAX_SKB_FRAGS || !sg) {
+					if (i == sysctl_max_skb_frags || !sg) {
 						tcp_mark_push(tp, skb);
 						goto new_segment;
 					}
@@ -2213,6 +2216,9 @@ adjudge_to_death:
 			tcp_send_active_reset(sk, GFP_ATOMIC);
 			NET_INC_STATS_BH(sock_net(sk),
 					LINUX_MIB_TCPABORTONMEMORY);
+		} else if (!check_net(sock_net(sk))) {
+			/* Not possible to send reset; just close */
+			tcp_set_state(sk, TCP_CLOSE);
 		}
 	}
 
@@ -2296,11 +2302,23 @@ int tcp_disconnect(struct sock *sk, int flags)
 	tcp_set_ca_state(sk, TCP_CA_Open);
 	tcp_clear_retrans(tp);
 	inet_csk_delack_init(sk);
+	/* Initialize rcv_mss to TCP_MIN_MSS to avoid division by 0
+	 * issue in __tcp_select_window()
+	 */
+	icsk->icsk_ack.rcv_mss = TCP_MIN_MSS;
 	tcp_init_send_head(sk);
 	memset(&tp->rx_opt, 0, sizeof(tp->rx_opt));
 	__sk_dst_reset(sk);
+	dst_release(sk->sk_rx_dst);
+	sk->sk_rx_dst = NULL;
 
 	WARN_ON(inet->inet_num && !icsk->icsk_bind_hash);
+
+	if (sk->sk_frag.page) {
+		put_page(sk->sk_frag.page);
+		sk->sk_frag.page = NULL;
+		sk->sk_frag.offset = 0;
+	}
 
 	sk->sk_error_report(sk);
 	return err;

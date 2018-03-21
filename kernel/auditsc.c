@@ -1013,7 +1013,7 @@ static int audit_log_pid_context(struct audit_context *context, pid_t pid,
 }
 
 static void audit_log_execve_info(struct audit_context *context,
-				 struct audit_buffer **ab)
+				  struct audit_buffer **ab)
 {
 	long len_max;
 	long len_rem;
@@ -1184,7 +1184,6 @@ static void audit_log_execve_info(struct audit_context *context,
 
 out:
 	kfree(buf_head);
-
 }
 
 static void show_special(struct audit_context *context, int *call_panic)
