@@ -864,7 +864,7 @@ int isdbt_init(void)
 	s32 res;
 
 	hInit = kmalloc(sizeof(struct ISDBT_INIT_INFO_T), GFP_KERNEL);
-	print_log(hInit, "isdbt_init build on %s @ %s\n", __DATE__, __TIME__);
+//	print_log(hInit, "isdbt_init build on %s @ %s\n", __DATE__, __TIME__);
 
 	res = misc_register(&fc8180_misc_device);
 
