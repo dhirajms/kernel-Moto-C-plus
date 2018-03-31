@@ -1304,7 +1304,7 @@ static long ISP_Buf_CTRL_FUNC_FRMB(unsigned long Param)
 	/* MUINT32 p1_fbc_reg[_rt_dma_max_]; */
 	unsigned long p1_fbc_reg[_rt_dma_max_];
 	/* MUINT32 p1_dma_addr_reg[_rt_dma_max_]; */
-	unsigned long p1_dma_addr_reg[_rt_dma_max_];
+	unsigned long p1_dma_addr_reg[_rt_dma_max_] = { 0 };
 	unsigned long flags;
 	ISP_RT_BUF_INFO_STRUCT_FRMB rt_buf_info;
 	ISP_DEQUE_BUF_INFO_STRUCT_FRMB deque_buf;
