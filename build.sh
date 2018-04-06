@@ -28,7 +28,7 @@ export KBUILD_BUILD_HOST="Dracarys"
 
 #get toolchain gcc-gnu-7.x
 git clone https://github.com/nathanchance/gcc-prebuilts -b arm-gnu-7.x arm-gnu-7.x
-export CROSS_COMPILE=/home/younilban/kernel/panelli/arm-gnu-7.x/bin/arm-gnu-linux-androideabi-
+export CROSS_COMPILE=$PWD/arm-gnu-7.x/bin/arm-gnu-linux-androideabi-
 
 #Defconfig for Moto C plus
 #make -C $PWD O=$PWD/out ARCH=arm A158_defconfig
