@@ -1,4 +1,3 @@
-
 /dts-v1/;
 
 #include "mt6735m.dtsi"
@@ -119,6 +118,7 @@
 		vib_limit = <9>;
 		vib_vol= <5>;
 	};
+
  /* sensor standardization */
 //qiumeng@wind-mobi.com begin at 20161109
 		cust_accel@0 {
